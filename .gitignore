@@ -1,0 +1,39 @@
+# Environments
+.env
+.env.local
+.env.*
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+Dockerfile
+
+# Scripts
+push_to_ecr.sh
+push_to_ecr.ps1
+imp_backend.txt

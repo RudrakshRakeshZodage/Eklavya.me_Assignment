@@ -1,0 +1,8 @@
+.env
+.env.*
+venv/
+__pycache__/
+*.pyc
+push_to_ecr.sh
+push_to_ecr.ps1
+imp_backend.txt

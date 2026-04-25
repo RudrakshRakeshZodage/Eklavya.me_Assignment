@@ -46,6 +46,17 @@ class FinalResponse(BaseModel):
 @app.post("/generate", response_model=FinalResponse)
 async def generate_content(request: GenerationRequest):
     try:
+        print(f"DEBUG: Generating content for Grade {request.grade}, Topic: {request.topic}")
+        or_key = os.getenv("OPENROUTER_API_KEY")
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        
+        if gemini_key:
+            print(f"DEBUG: Gemini Key found (starts with {gemini_key[:10]}...)")
+        elif or_key:
+            print(f"DEBUG: Falling back to OpenRouter (starts with {or_key[:10]}...)")
+        else:
+            print("DEBUG: NO API KEYS FOUND!")
+            
         generator = GeneratorAgent()
         reviewer = ReviewerAgent()
         
@@ -61,18 +72,21 @@ async def generate_content(request: GenerationRequest):
         
         # Step 2: Review
         review_result = reviewer.review(initial_content, request.grade)
+        status = review_result.get("status", "pass")
+        feedback = review_result.get("feedback", [])
+        
         workflow.append(AgentStep(
             agent="Reviewer",
-            status=review_result["status"],
+            status=status,
             output=review_result,
-            feedback=review_result["feedback"]
+            feedback=feedback
         ))
         
         final_content = initial_content
         
         # Step 3: Refinement (if failed)
-        if review_result["status"] == "fail":
-            feedback_str = "\n".join(review_result["feedback"])
+        if status == "fail":
+            feedback_str = "\n".join(feedback)
             refined_content = generator.generate(request.grade, request.topic, feedback=feedback_str)
             
             # Final Review of Refined Content (Simplified: we trust the refinement for the 1-pass limit)

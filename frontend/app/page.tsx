@@ -9,45 +9,43 @@ interface MCQ {
   answer: string;
 }
 
+interface WorkflowStep {
+  agent: string;
+  status: 'success' | 'fail' | 'pass';
+  feedback?: string[];
+}
+
 interface Content {
   explanation: string;
   mcqs: MCQ[];
 }
 
-interface AgentStep {
-  agent: string;
-  status: string;
-  output: any;
-  feedback?: string[];
-}
-
-interface WorkflowResponse {
-  workflow: AgentStep[];
+interface PipelineResponse {
+  workflow: WorkflowStep[];
   final_content: Content;
 }
 
 export default function Home() {
-  const [grade, setGrade] = useState<number>(4);
-  const [topic, setTopic] = useState<string>('');
+  const [grade, setGrade] = useState(4);
+  const [topic, setTopic] = useState('');
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<WorkflowResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<PipelineResponse | null>(null);
+  const [error, setError] = useState('');
 
   const triggerPipeline = async () => {
-    if (!topic) return;
     setLoading(true);
-    setError(null);
+    setError('');
     setData(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://13.217.105.1';
       const response = await fetch(`${apiUrl}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ grade, topic }),
+        body: JSON.stringify({ grade, topic })
       });
 
-      if (!response.ok) throw new Error('Failed to generate content');
+      if (!response.ok) throw new Error('System error during generation');
 
       const result = await response.json();
       setData(result);
@@ -59,27 +57,64 @@ export default function Home() {
   };
 
   return (
-    <main className="container">
-      <header className={styles.header}>
-        <h1 className={styles.title}>AI Learning <span className={styles.gradientText}>Architect</span></h1>
-        <p className={styles.subtitle}>Agent-based educational content generation and review</p>
+    <div className={styles.dashboard}>
+      {/* Sidebar */}
+      <aside className={styles.sidebar}>
+        <div className={styles.logoBox} title="Eklavya.me">E.</div>
+        <div style={{ marginTop: 'auto', marginBottom: '2rem', fontWeight: 900, fontSize: '0.8rem' }}>V2.0</div>
+      </aside>
+
+      {/* Topbar */}
+      <header className={styles.topbar}>
+        <div className={styles.pageTitle}>✦ AI Learning Architect / Control Center</div>
+        <div style={{ fontWeight: 800, color: '#64748b' }}>
+          {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </div>
       </header>
 
-      <section className="glass-card animate-fade-in">
-        <div className={styles.inputGroup}>
-          <div className={styles.inputField}>
-            <label>Target Grade</label>
+      {/* Main Content */}
+      <main className={styles.mainContent}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Welcome back, <span style={{ color: '#6366f1' }}>Designer</span></h1>
+          <p style={{ color: '#64748b', fontWeight: 700, marginTop: '0.5rem' }}>
+            Ready to architect some education? {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+          </p>
+        </div>
+
+        {/* Stats Grid - Visual Interest */}
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard} style={{ borderTop: '6px solid #fbbf24' }}>
+            <div className={styles.statLabel}>Active Agents</div>
+            <div className={styles.statValue}>2.0</div>
+          </div>
+          <div className={styles.statCard} style={{ borderTop: '6px solid #6366f1' }}>
+            <div className={styles.statLabel}>Target Level</div>
+            <div className={styles.statValue}>G-{grade}</div>
+          </div>
+          <div className={styles.statCard} style={{ borderTop: '6px solid #10b981' }}>
+            <div className={styles.statLabel}>Pipeline Status</div>
+            <div className={styles.statValue}>{loading ? 'BUSY' : 'IDLE'}</div>
+          </div>
+          <div className={styles.statCard} style={{ borderTop: '6px solid #000' }}>
+            <div className={styles.statLabel}>Engine</div>
+            <div className={styles.statValue}>Gemini</div>
+          </div>
+        </div>
+
+        <section className={styles.inputArea}>
+          <div className={styles.inputField} style={{ flex: 1 }}>
+            <label>Choose Grade</label>
             <select value={grade} onChange={(e) => setGrade(Number(e.target.value))}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(g => (
                 <option key={g} value={g}>Grade {g}</option>
               ))}
             </select>
           </div>
-          <div className={styles.inputField} style={{ flex: 2 }}>
-            <label>Topic</label>
+          <div className={styles.inputField} style={{ flex: 3 }}>
+            <label>Topic to Master</label>
             <input 
               type="text" 
-              placeholder="e.g. Types of angles, Solar System, Fractions..." 
+              placeholder="e.g. History of the Internet, Quantum Mechanics..." 
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
             />
@@ -89,69 +124,79 @@ export default function Home() {
             onClick={triggerPipeline}
             disabled={loading || !topic}
           >
-            {loading ? 'Processing...' : 'Generate Content'}
+            {loading ? 'Processing...' : 'Run Pipeline ⚡'}
           </button>
-        </div>
-      </section>
+        </section>
 
-      {error && <div className={styles.error}>{error}</div>}
+        {error && <div className={styles.error} style={{ marginBottom: '2rem' }}>⚠️ SYSTEM ALERT: {error}</div>}
 
-      {loading && (
-        <div className={styles.loaderContainer}>
-          <div className={styles.loader}></div>
-          <p>Agents are collaborating...</p>
-        </div>
-      )}
+        {loading && (
+          <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '2rem', background: '#fff', padding: '2rem', border: '4px solid #000', boxShadow: '10px 10px 0px #fbbf24', marginBottom: '3rem' }}>
+            <div className={styles.loader}></div>
+            <div>
+              <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '1.2rem' }}>Agent Collaboration in Progress</div>
+              <div style={{ color: '#64748b', fontWeight: 600 }}>Analyzing curriculum standards and generating assessments...</div>
+            </div>
+          </div>
+        )}
 
-      {data && (
-        <div className={styles.contentGrid}>
-          {/* Workflow Visualization */}
-          <section className="glass-card animate-fade-in">
-            <h2 className={styles.sectionTitle}>Agent Workflow</h2>
-            <div className={styles.workflowList}>
-              {data.workflow.map((step, i) => (
-                <div key={i} className={`${styles.workflowStep} ${styles[step.status]}`}>
-                  <div className={styles.stepHeader}>
-                    <span className={styles.agentName}>{step.agent}</span>
-                    <span className={styles.stepStatus}>{step.status.toUpperCase()}</span>
+        {data && (
+          <div className={`${styles.contentGrid} animate-fade-in`}>
+            {/* Left: Agent Logs */}
+            <aside className={styles.card}>
+              <h2 className={styles.sectionTitle}>Agent Pulse</h2>
+              <div className={styles.workflowList}>
+                {data.workflow.map((step, i) => (
+                  <div key={i} className={styles.workflowStep}>
+                    <div className={styles.stepHeader}>
+                      <span>{step.agent}</span>
+                      <span className={styles[step.status]}>{step.status}</span>
+                    </div>
+                    {step.feedback && step.feedback.length > 0 && (
+                      <ul style={{ fontSize: '0.85rem', marginTop: '0.8rem', color: '#64748b', paddingLeft: '1rem' }}>
+                        {step.feedback.map((f, j) => <li key={j} style={{ marginBottom: '0.3rem' }}>{f}</li>)}
+                      </ul>
+                    )}
                   </div>
-                  {step.feedback && step.feedback.length > 0 && (
-                    <ul className={styles.feedbackList}>
-                      {step.feedback.map((f, j) => <li key={j}>{f}</li>)}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </aside>
 
-          {/* Final Content Display */}
-          <section className="glass-card animate-fade-in" style={{ gridColumn: 'span 2' }}>
-            <h2 className={styles.sectionTitle}>Generated Content</h2>
-            <div className={styles.explanationBox}>
-              <h3>Explanation</h3>
-              <p>{data.final_content.explanation}</p>
-            </div>
-            
-            <div className={styles.mcqGrid}>
-              {data.final_content.mcqs.map((mcq, i) => (
-                <div key={i} className={styles.mcqCard}>
-                  <h4>Question {i + 1}</h4>
-                  <p>{mcq.question}</p>
-                  <div className={styles.options}>
-                    {mcq.options.map((opt, j) => (
-                      <div key={j} className={styles.option}>
-                        {opt}
-                      </div>
-                    ))}
+            {/* Right: Output */}
+            <main className={styles.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <h2 className={styles.sectionTitle} style={{ background: '#6366f1' }}>Master Brief</h2>
+                <div style={{ background: '#000', color: '#fff', padding: '0.4rem 1rem', fontWeight: 900, fontSize: '0.8rem' }}>GRADE {grade} / {topic.toUpperCase()}</div>
+              </div>
+              
+              <div style={{ marginBottom: '3rem', background: '#f8fafc', padding: '2rem', border: '2px solid #000' }}>
+                <h3 style={{ fontWeight: 900, textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ color: '#6366f1' }}>●</span> Explanation
+                </h3>
+                <p style={{ lineHeight: 1.8, fontSize: '1.15rem', color: '#1e293b' }}>{data.final_content.explanation}</p>
+              </div>
+
+              <h2 className={styles.sectionTitle} style={{ background: '#10b981' }}>Assessment Suite</h2>
+              <div className={styles.mcqGrid}>
+                {data.final_content.mcqs.map((mcq, i) => (
+                  <div key={i} className={styles.mcqCard}>
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                      <div style={{ background: '#000', color: '#fff', width: '30px', height: '30px', display: 'flex', alignItems: 'center', fontWeight: 900, flexShrink: 0, justifyContent: 'center' }}>{i+1}</div>
+                      <p style={{ fontWeight: 800, fontSize: '1.1rem' }}>{mcq.question}</p>
+                    </div>
+                    <div className={styles.options}>
+                      {mcq.options.map((opt, j) => (
+                        <div key={j} className={styles.option}>{opt}</div>
+                      ))}
+                    </div>
+                    <div className={styles.answer}>✓ VERIFIED: {mcq.answer}</div>
                   </div>
-                  <div className={styles.answer}>Correct Answer: {mcq.answer}</div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      )}
-    </main>
+                ))}
+              </div>
+            </main>
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
