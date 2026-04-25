@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './page.module.css';
 
 interface MCQ {
@@ -26,11 +26,17 @@ interface PipelineResponse {
 }
 
 export default function Home() {
+  const [isMounted, setIsMounted] = useState(false);
   const [grade, setGrade] = useState(4);
   const [topic, setTopic] = useState('');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<PipelineResponse | null>(null);
   const [error, setError] = useState('');
+
+  // Hydration fix
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const triggerPipeline = async () => {
     setLoading(true);
@@ -38,8 +44,8 @@ export default function Home() {
     setData(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://13.217.105.1';
-      const response = await fetch(`${apiUrl}/generate`, {
+      // Use the Vercel Proxy Rewrite path
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ grade, topic })
@@ -68,7 +74,7 @@ export default function Home() {
       <header className={styles.topbar}>
         <div className={styles.pageTitle}>✦ AI Learning Architect / Control Center</div>
         <div style={{ fontWeight: 800, color: '#64748b' }}>
-          {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          {isMounted ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
         </div>
       </header>
 
@@ -77,7 +83,7 @@ export default function Home() {
         <div className={styles.header}>
           <h1 className={styles.title}>Welcome back, <span style={{ color: '#6366f1' }}>Designer</span></h1>
           <p style={{ color: '#64748b', fontWeight: 700, marginTop: '0.5rem' }}>
-            Ready to architect some education? {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+            Ready to architect some education? {isMounted ? new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : '...'}
           </p>
         </div>
 
