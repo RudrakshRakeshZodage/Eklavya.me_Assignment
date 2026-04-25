@@ -48,7 +48,7 @@ class GeneratorAgent:
             prompt += f"\n\nRefinement Request:\nPrevious output was rejected with the following feedback:\n{feedback}\nPlease regenerate the content addressing this feedback."
 
         response = self.client.chat.completions.create(
-            model="google/gemini-flash-1.5",
+            model="nvidia/llama-3.1-nemotron-70b-instruct:free",
             messages=[
                 {"role": "system", "content": "You are a helpful educational assistant that outputs JSON."},
                 {"role": "user", "content": prompt}

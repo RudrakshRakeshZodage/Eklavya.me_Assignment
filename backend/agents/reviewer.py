@@ -46,7 +46,7 @@ class ReviewerAgent:
         """
 
         response = self.client.chat.completions.create(
-            model="google/gemini-flash-1.5",
+            model="nvidia/llama-3.1-nemotron-70b-instruct:free",
             messages=[
                 {"role": "system", "content": "You are a critical reviewer that outputs JSON."},
                 {"role": "user", "content": prompt}
