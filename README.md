@@ -6,13 +6,6 @@ Eklavya.me is a state-of-the-art AI-powered platform designed to architect perso
 
 ---
 
-## 📺 Product Demo
-
-Explore the platform in action:
-
-![Demo Video](./DEMO.mp4)
-
----
 
 ## 📸 Screenshots
 
