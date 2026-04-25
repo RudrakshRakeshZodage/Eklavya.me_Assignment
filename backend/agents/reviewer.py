@@ -1,22 +1,21 @@
 import json
 import os
 from typing import Dict, Any, List
-import google.generativeai as genai
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class ReviewerAgent:
     def __init__(self, api_key: str = None):
-        if api_key:
-            genai.configure(api_key=api_key)
-        else:
-            api_key = os.getenv("GOOGLE_API_KEY")
-            if not api_key:
-                raise ValueError("GOOGLE_API_KEY not found in environment variables")
-            genai.configure(api_key=api_key)
+        api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            raise ValueError("OPENROUTER_API_KEY not found in environment variables")
         
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+        )
 
     def review(self, content: Dict[str, Any], grade: int) -> Dict[str, Any]:
         content_str = json.dumps(content, indent=2)
@@ -42,9 +41,13 @@ class ReviewerAgent:
         Be strict. If even one sentence is too complex or a fact is slightly off, mark it as "fail" and provide specific feedback.
         """
 
-        response = self.model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
+        response = self.client.chat.completions.create(
+            model="google/gemini-flash-1.5",
+            messages=[
+                {"role": "system", "content": "You are a critical reviewer that outputs JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"}
         )
         
-        return json.loads(response.text)
+        return json.loads(response.choices[0].message.content)
