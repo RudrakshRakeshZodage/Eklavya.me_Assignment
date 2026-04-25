@@ -1,20 +1,13 @@
 import os
 import json
 import google.generativeai as genai
-from typing import Dict, Any, List
-from dotenv import load_dotenv
-from utils import extract_json
-
-load_dotenv()
+from typing import Dict, Any, Optional
+from openai import OpenAI
 
 class ReviewerAgent:
-    def __init__(self, api_key: str = None):
-        api_key = api_key or os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            # Fallback to OpenRouter
+    def __init__(self, api_key: str, or_key: Optional[str] = None):
+        if or_key:
             self.use_openrouter = True
-            from openai import OpenAI
-            or_key = os.getenv("OPENROUTER_API_KEY")
             self.client = OpenAI(
                 base_url="https://openrouter.ai/api/v1",
                 api_key=or_key,
@@ -26,43 +19,45 @@ class ReviewerAgent:
         else:
             self.use_openrouter = False
             genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-flash-latest')
+            # Use the verified model name from list_gemini_models.py
+            for model_name in ['models/gemini-flash-latest', 'gemini-1.5-flash', 'gemini-pro']:
+                try:
+                    self.model = genai.GenerativeModel(model_name)
+                    break
+                except:
+                    continue
 
     def review(self, content: Dict[str, Any], grade: int) -> Dict[str, Any]:
         content_str = json.dumps(content, indent=2)
         
         prompt = f"""
-        You are an educational content Reviewer Agent.
-        Your task is to evaluate content generated for a Grade {grade} student.
-
-        Evaluation Criteria:
-        1. Age appropriateness: Is the language and complexity right for Grade {grade}?
-        2. Conceptual correctness: Are the facts and explanations accurate?
-        3. Clarity: Is the content easy to understand?
-
-        Input Content:
+        Review the following educational content for Grade {grade}.
+        
+        Content:
         {content_str}
-
-        The output must be a valid JSON object with the following structure:
+        
+        Check for:
+        1. Accuracy of information.
+        2. Appropriate language for Grade {grade}.
+        3. Quality of the quiz question.
+        
+        If it's good, return it as is. If not, provide feedback for improvement.
+        Return your response in EXACTLY this JSON format:
         {{
-            "status": "pass" or "fail",
-            "feedback": ["List of specific issues or 'Content looks great'"]
+            "status": "APPROVED" or "REJECTED",
+            "feedback": "Your detailed feedback if REJECTED, or 'Looks good!' if APPROVED",
+            "reviewed_content": {{ ... same structure as input ... }}
         }}
-
-        Be strict. If even one sentence is too complex or a fact is slightly off, mark it as "fail".
         """
-
+        
         try:
             if self.use_openrouter:
                 response = self.client.chat.completions.create(
-                    model="nvidia/nemotron-3-super-120b-a12b:free",
-                    messages=[
-                        {"role": "system", "content": "You are a critical reviewer that outputs JSON."},
-                        {"role": "user", "content": prompt}
-                    ],
+                    model="google/gemini-flash-1.5",
+                    messages=[{"role": "user", "content": prompt}],
                     response_format={"type": "json_object"}
                 )
-                resp_text = response.choices[0].message.content
+                resp_text = json.loads(response.choices[0].message.content)
             else:
                 response = self.model.generate_content(
                     prompt,
@@ -86,16 +81,16 @@ class ReviewerAgent:
         except Exception as e:
             print(f"ERROR in ReviewerAgent: {e}")
             raise e
-        
-        result = resp_text if isinstance(resp_text, dict) else extract_json(resp_text)
-        
-        # Ensure standard structure
-        if not isinstance(result, dict):
-            result = {"status": "pass", "feedback": []}
             
-        if "status" not in result:
-            result["status"] = "pass"
-        if "feedback" not in result:
-            result["feedback"] = []
-            
-        return result
+        return resp_text
+
+def extract_json(text: str) -> Dict[str, Any]:
+    try:
+        # Basic JSON extraction
+        if "{" in text:
+            start = text.find("{")
+            end = text.rfind("}") + 1
+            return json.loads(text[start:end])
+        return json.loads(text)
+    except:
+        return {{"error": "Failed to extract JSON"}}
