@@ -39,6 +39,7 @@ export default function Home() {
     setError(null);
     setData(null);
 
+    try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const response = await fetch(`${apiUrl}/generate`, {
         method: 'POST',
