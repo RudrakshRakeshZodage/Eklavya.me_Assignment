@@ -15,6 +15,10 @@ class ReviewerAgent:
         self.client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
+            default_headers={
+                "HTTP-Referer": "https://eklavya.me",
+                "X-Title": "Eklavya.me Assignment"
+            }
         )
 
     def review(self, content: Dict[str, Any], grade: int) -> Dict[str, Any]:
