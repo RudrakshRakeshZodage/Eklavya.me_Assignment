@@ -32,6 +32,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<PipelineResponse | null>(null);
   const [error, setError] = useState('');
+  const [logs, setLogs] = useState<string[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -41,6 +42,8 @@ export default function Home() {
     setLoading(true);
     setError('');
     setData(null);
+    const timestamp = new Date().toLocaleTimeString();
+    setLogs(prev => [`[${timestamp}] Initiating pipeline for: ${topic}`, ...prev]);
 
     try {
       const response = await fetch('/api/generate', {
@@ -53,9 +56,12 @@ export default function Home() {
       console.log("PIPELINE RESULT:", result);
       
       if (!response.ok) {
-        throw new Error(result.error || 'System error during generation');
+        const errorMsg = result.detail || result.error || 'System error during generation';
+        setLogs(prev => [`[${new Date().toLocaleTimeString()}] ERROR: ${errorMsg}`, ...prev]);
+        throw new Error(errorMsg);
       }
 
+      setLogs(prev => [`[${new Date().toLocaleTimeString()}] Pipeline completed successfully.`, ...prev]);
       setData(result);
     } catch (err: any) {
       setError(err.message);
@@ -134,7 +140,12 @@ export default function Home() {
           </button>
         </section>
 
-        {error && <div className={styles.error} style={{ marginBottom: '2rem' }}>⚠️ SYSTEM ALERT: {error}</div>}
+        {error && (
+          <div className={styles.error} style={{ marginBottom: '2rem' }}>
+            <div style={{ fontWeight: 900 }}>⚠️ BRIDGE ALERT</div>
+            <div style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.8 }}>{error}</div>
+          </div>
+        )}
 
         {loading && (
           <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '2rem', background: '#fff', padding: '2rem', border: '4px solid #000', boxShadow: '10px 10px 0px #fbbf24', marginBottom: '3rem' }}>
@@ -145,6 +156,25 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* Bridge Activity Section */}
+        <section className={styles.card} style={{ marginBottom: '3rem', background: '#0f172a', color: '#38bdf8', border: 'none' }}>
+          <div className={styles.stepHeader} style={{ marginBottom: '1.5rem', borderBottom: '1px solid #1e293b', paddingBottom: '1rem' }}>
+            <span style={{ fontWeight: 900, letterSpacing: '0.1em', color: '#fff' }}>LIVE BRIDGE ACTIVITY</span>
+            <span style={{ fontSize: '0.7rem', background: '#0ea5e9', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>CONNECTED</span>
+          </div>
+          <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', maxHeight: '150px', overflowY: 'auto' }}>
+            {logs.length === 0 && <div style={{ color: '#64748b' }}>Waiting for connection...</div>}
+            {logs.map((log, i) => (
+              <div key={i} style={{ marginBottom: '0.5rem', display: 'flex', gap: '1rem' }}>
+                <span style={{ color: '#64748b', whiteSpace: 'nowrap' }}>{log.split('] ')[0]}]</span>
+                <span style={{ color: log.includes('ERROR') ? '#f43f5e' : (log.includes('successfully') ? '#10b981' : '#38bdf8') }}>
+                  {log.split('] ')[1]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {data && (
           <div className={`${styles.contentGrid} animate-fade-in`}>
