@@ -74,7 +74,19 @@ class GeneratorAgent:
                         response_mime_type="application/json",
                     )
                 )
+                # Clean the output
                 content = response.text
+                if "```json" in content:
+                    content = content.split("```json")[1].split("```")[0].strip()
+                elif "```" in content:
+                    content = content.split("```")[1].split("```")[0].strip()
+                
+                try:
+                    return json.loads(content)
+                except Exception as e:
+                    print(f"DEBUG: Raw Generator Output: {response.text}")
+                    print(f"ERROR: Failed to parse generator JSON: {str(e)}")
+                    raise e
         except Exception as e:
             print(f"ERROR in GeneratorAgent: {e}")
             raise e
