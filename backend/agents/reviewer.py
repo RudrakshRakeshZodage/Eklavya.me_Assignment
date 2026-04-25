@@ -6,9 +6,22 @@ from openai import OpenAI
 
 class ReviewerAgent:
     def __init__(self, api_key: str, or_key: Optional[str] = None):
+        self.api_key = api_key
+        self.or_key = or_key
+        
+        # Initialize Gemini
+        genai.configure(api_key=api_key)
+        self.gemini_model = None
+        for model_name in ['models/gemini-flash-latest', 'gemini-1.5-flash', 'gemini-pro']:
+            try:
+                self.gemini_model = genai.GenerativeModel(model_name)
+                break
+            except:
+                continue
+                
+        # Initialize OpenRouter
         if or_key:
-            self.use_openrouter = True
-            self.client = OpenAI(
+            self.or_client = OpenAI(
                 base_url="https://openrouter.ai/api/v1",
                 api_key=or_key,
                 default_headers={
@@ -17,15 +30,7 @@ class ReviewerAgent:
                 }
             )
         else:
-            self.use_openrouter = False
-            genai.configure(api_key=api_key)
-            # Use the verified model name from list_gemini_models.py
-            for model_name in ['models/gemini-flash-latest', 'gemini-1.5-flash', 'gemini-pro']:
-                try:
-                    self.model = genai.GenerativeModel(model_name)
-                    break
-                except:
-                    continue
+            self.or_client = None
 
     def review(self, content: Dict[str, Any], grade: int) -> Dict[str, Any]:
         content_str = json.dumps(content, indent=2)
@@ -50,47 +55,35 @@ class ReviewerAgent:
         }}
         """
         
+        # Try Gemini First
         try:
-            if self.use_openrouter:
-                response = self.client.chat.completions.create(
-                    model="google/gemini-flash-1.5",
-                    messages=[{"role": "user", "content": prompt}],
-                    response_format={"type": "json_object"}
+            print("Reviewer: Trying Gemini...")
+            response = self.gemini_model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    response_mime_type="application/json",
                 )
-                resp_text = json.loads(response.choices[0].message.content)
-            else:
-                response = self.model.generate_content(
-                    prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        response_mime_type="application/json",
-                    )
-                )
-                # Clean the output
-                content = response.text
-                if "```json" in content:
-                    content = content.split("```json")[1].split("```")[0].strip()
-                elif "```" in content:
-                    content = content.split("```")[1].split("```")[0].strip()
-                    
-                try:
-                    resp_text = json.loads(content)
-                except Exception as e:
-                    print(f"DEBUG: Raw Reviewer Output: {response.text}")
-                    print(f"ERROR: Failed to parse reviewer JSON: {str(e)}")
-                    raise e
-        except Exception as e:
-            print(f"ERROR in ReviewerAgent: {e}")
-            raise e
+            )
+            resp_text = response.text
+            if "```json" in resp_text:
+                resp_text = resp_text.split("```json")[1].split("```")[0].strip()
+            return json.loads(resp_text)
             
-        return resp_text
-
-def extract_json(text: str) -> Dict[str, Any]:
-    try:
-        # Basic JSON extraction
-        if "{" in text:
-            start = text.find("{")
-            end = text.rfind("}") + 1
-            return json.loads(text[start:end])
-        return json.loads(text)
-    except:
-        return {{"error": "Failed to extract JSON"}}
+        except Exception as e:
+            print(f"Reviewer: Gemini failed or hit quota: {e}")
+            
+            # Fallback to OpenRouter
+            if self.or_client:
+                print("Reviewer: Falling back to OpenRouter...")
+                try:
+                    response = self.or_client.chat.completions.create(
+                        model="google/gemini-flash-1.5",
+                        messages=[{"role": "user", "content": prompt}],
+                        response_format={"type": "json_object"}
+                    )
+                    return json.loads(response.choices[0].message.content)
+                except Exception as or_e:
+                    print(f"Reviewer: OpenRouter also failed: {or_e}")
+                    raise e
+            else:
+                raise e

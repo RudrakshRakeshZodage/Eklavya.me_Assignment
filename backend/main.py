@@ -23,10 +23,9 @@ app.add_middleware(
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-# Initialize Agents
-# We prioritize Gemini (api_key). If Gemini is missing, we use OpenRouter.
-generator = GeneratorAgent(api_key=GEMINI_API_KEY, or_key=OPENROUTER_API_KEY if not GEMINI_API_KEY else None)
-reviewer = ReviewerAgent(api_key=GEMINI_API_KEY, or_key=OPENROUTER_API_KEY if not GEMINI_API_KEY else None)
+# Initialize Agents with BOTH keys for fallback
+generator = GeneratorAgent(api_key=GEMINI_API_KEY, or_key=OPENROUTER_API_KEY)
+reviewer = ReviewerAgent(api_key=GEMINI_API_KEY, or_key=OPENROUTER_API_KEY)
 
 class GenerationRequest(BaseModel):
     grade: int
@@ -35,7 +34,7 @@ class GenerationRequest(BaseModel):
 @app.post("/generate")
 async def generate_content(request: GenerationRequest):
     try:
-        print(f"Generating for Grade {request.grade}: {request.topic}")
+        print(f"Generation Request: Grade {request.grade}, Topic: {request.topic}")
         
         # Phase 1: Generation
         content = generator.generate(request.grade, request.topic)
@@ -44,8 +43,6 @@ async def generate_content(request: GenerationRequest):
         review_result = reviewer.review(content, request.grade)
         
         # Phase 3: Final Output
-        # If rejected, we might want to regenerate once, but for the assignment 
-        # we'll return the reviewed content and the status
         return {
             "status": review_result.get("status", "APPROVED"),
             "feedback": review_result.get("feedback", "Looks good!"),
@@ -53,7 +50,8 @@ async def generate_content(request: GenerationRequest):
         }
         
     except Exception as e:
-        print(f"ERROR: {str(e)}")
+        print(f"BACKEND ERROR: {str(e)}")
+        # If both fail, return the error
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
@@ -62,6 +60,6 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    # Use PORT from environment (Render/Heroku requirement)
+    # Use PORT from environment (Render requirement)
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)

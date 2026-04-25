@@ -6,9 +6,22 @@ from openai import OpenAI
 
 class GeneratorAgent:
     def __init__(self, api_key: str, or_key: Optional[str] = None):
+        self.api_key = api_key
+        self.or_key = or_key
+        
+        # Initialize Gemini
+        genai.configure(api_key=api_key)
+        self.gemini_model = None
+        for model_name in ['models/gemini-flash-latest', 'gemini-1.5-flash', 'gemini-pro']:
+            try:
+                self.gemini_model = genai.GenerativeModel(model_name)
+                break
+            except:
+                continue
+                
+        # Initialize OpenRouter
         if or_key:
-            self.use_openrouter = True
-            self.client = OpenAI(
+            self.or_client = OpenAI(
                 base_url="https://openrouter.ai/api/v1",
                 api_key=or_key,
                 default_headers={
@@ -17,15 +30,7 @@ class GeneratorAgent:
                 }
             )
         else:
-            self.use_openrouter = False
-            genai.configure(api_key=api_key)
-            # Use the verified model name from list_gemini_models.py
-            for model_name in ['models/gemini-flash-latest', 'gemini-1.5-flash', 'gemini-pro']:
-                try:
-                    self.model = genai.GenerativeModel(model_name)
-                    break
-                except:
-                    continue
+            self.or_client = None
 
     def generate(self, grade: int, topic: str, feedback: Optional[str] = None) -> Dict[str, Any]:
         prompt = f"""
@@ -48,34 +53,35 @@ class GeneratorAgent:
         }}
         """
         
+        # Try Gemini First
         try:
-            if self.use_openrouter:
-                response = self.client.chat.completions.create(
-                    model="google/gemini-flash-1.5",
-                    messages=[{"role": "user", "content": prompt}],
-                    response_format={"type": "json_object"}
+            print("Generator: Trying Gemini...")
+            response = self.gemini_model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    response_mime_type="application/json",
                 )
-                return json.loads(response.choices[0].message.content)
-            else:
-                response = self.model.generate_content(
-                    prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        response_mime_type="application/json",
-                    )
-                )
-                # Clean the output
-                content = response.text
-                if "```json" in content:
-                    content = content.split("```json")[1].split("```")[0].strip()
-                elif "```" in content:
-                    content = content.split("```")[1].split("```")[0].strip()
-                
-                try:
-                    return json.loads(content)
-                except Exception as e:
-                    print(f"DEBUG: Raw Generator Output: {response.text}")
-                    print(f"ERROR: Failed to parse generator JSON: {str(e)}")
-                    raise e
+            )
+            content = response.text
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            return json.loads(content)
+            
         except Exception as e:
-            print(f"ERROR in GeneratorAgent: {e}")
-            raise e
+            print(f"Generator: Gemini failed or hit quota: {e}")
+            
+            # Fallback to OpenRouter
+            if self.or_client:
+                print("Generator: Falling back to OpenRouter...")
+                try:
+                    response = self.or_client.chat.completions.create(
+                        model="google/gemini-flash-1.5",
+                        messages=[{"role": "user", "content": prompt}],
+                        response_format={"type": "json_object"}
+                    )
+                    return json.loads(response.choices[0].message.content)
+                except Exception as or_e:
+                    print(f"Generator: OpenRouter also failed: {or_e}")
+                    raise e
+            else:
+                raise e
