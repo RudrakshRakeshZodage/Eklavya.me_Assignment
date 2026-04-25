@@ -4,8 +4,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // This code runs on Vercel's server, so it can talk to HTTP IPs without browser blocking
-    const response = await fetch('http://13.217.105.1/generate', {
+    // Use Port 8000 to bypass any Port 80 conflicts on EC2
+    const response = await fetch('http://13.217.105.1:8000/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
