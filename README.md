@@ -1,5 +1,7 @@
 # ✦ Eklavya.me | AI Learning Architect
 
+**Live Site:** [https://eklavya-assignment-sepia.vercel.app/](https://eklavya-assignment-sepia.vercel.app/)
+
 Eklavya.me is a state-of-the-art AI-powered platform designed to architect personalized educational content. It uses a collaborative multi-agent system to generate, review, and verify learning materials for students from Grade 1 to 12.
 
 ---
@@ -21,6 +23,48 @@ Explore the platform in action:
 ### 2. Agent Workflow
 ![Agent Pulse](./2.png)
 *Real-time agent pulse tracking the collaboration between the Curriculum Architect and Quality Reviewer.*
+
+---
+
+## 📂 File Structure
+
+```text
+Eklavya.me_Assignment/
+├── frontend/               # Next.js Application
+│   ├── app/
+│   │   ├── api/generate/   # Vercel Bridge (Connects to Render)
+│   │   └── page.tsx        # Dashboard UI
+│   └── public/             # Static Assets
+├── backend/                # FastAPI Application
+│   ├── agents/
+│   │   ├── generator.py    # AI Content Architect (OpenRouter)
+│   │   └── reviewer.py     # AI Quality Reviewer (OpenRouter)
+│   ├── main.py             # Server Controller & Entry Point
+│   └── requirements.txt    # Python Dependencies
+├── README.md               # Documentation
+├── 1.png / 2.png           # Screenshots
+└── DEMO.mp4                # Product Walkthrough
+```
+
+---
+
+## 🔗 API Architecture
+
+### Frontend Bridge
+- **Endpoint**: `/api/generate` (Internal Vercel Route)
+- **Role**: Proxies requests from the browser to the Render backend to avoid CORS and Mixed Content issues.
+
+### Backend Endpoint
+- **URL**: `https://eklavya-me-assignment.onrender.com/generate`
+- **Method**: `POST`
+- **Payload**:
+  ```json
+  {
+    "grade": 10,
+    "topic": "Quantum Mechanics"
+  }
+  ```
+- **Response**: Returns a structured `workflow` log and `final_content` object.
 
 ---
 
