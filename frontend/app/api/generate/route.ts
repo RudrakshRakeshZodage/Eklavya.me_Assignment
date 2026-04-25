@@ -1,14 +1,14 @@
-// DEPLOYMENT VERSION: 2.1 (PORT 8000)
+// DEPLOYMENT VERSION: 3.0 (RENDER BACKEND)
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    console.log('Bridge: Sending request to EC2 Port 8000...');
+    console.log('Bridge: Sending request to Render Backend...');
     
-    // Use Port 8000 to bypass any Port 80 conflicts on EC2
-    const response = await fetch('http://13.217.105.1:8000/generate', {
+    // Connect to the new Render HTTPS URL
+    const response = await fetch('https://eklavya-me-assignment.onrender.com/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
