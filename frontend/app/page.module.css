@@ -277,3 +277,158 @@
   color: #ef4444;
   box-shadow: 8px 8px 0px #000;
 }
+
+.versionTag {
+  margin-top: auto;
+  margin-bottom: 2rem;
+  font-weight: 900;
+  font-size: 0.8rem;
+}
+
+.timeDisplay {
+  font-weight: 800;
+  color: #64748b;
+}
+
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: #fff;
+  padding: 2rem;
+  border: 4px solid #000;
+  box-shadow: 10px 10px 0px #fbbf24;
+  margin-bottom: 3rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.logsSection {
+  background: #0f172a;
+  color: #38bdf8;
+  padding: 2rem;
+  margin-bottom: 3rem;
+  border: none;
+  box-shadow: 10px 10px 0px #000;
+}
+
+.connectedBadge {
+  font-size: 0.7rem;
+  background: #0ea5e9;
+  color: #fff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.logsContent {
+  font-family: monospace;
+  font-size: 0.85rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .mcqGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    grid-row: 2 / 3;
+    grid-column: 1 / 2;
+    flex-direction: row;
+    height: auto;
+    padding: 1rem 2rem;
+    border-right: none;
+    border-bottom: 4px solid #000;
+    justify-content: space-between;
+  }
+
+  .versionTag {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .topbar {
+    grid-column: 1 / 2;
+    padding: 1rem 2rem;
+    border-bottom: 4px solid #000;
+  }
+
+  .mainContent {
+    grid-column: 1 / 2;
+    padding: 1.5rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .inputArea {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1.5rem;
+    gap: 1.5rem;
+    box-shadow: 8px 8px 0px #000;
+  }
+
+  .inputField {
+    flex: none !important;
+  }
+
+  .generateBtn {
+    width: 100%;
+    padding: 1.5rem;
+  }
+
+  .loadingContainer {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pageTitle {
+    font-size: 0.9rem;
+  }
+
+  .timeDisplay {
+    display: none;
+  }
+
+  .statValue {
+    font-size: 1.4rem;
+  }
+
+  .card, .logsSection {
+    padding: 1.2rem;
+    box-shadow: 6px 6px 0px #000;
+  }
+}

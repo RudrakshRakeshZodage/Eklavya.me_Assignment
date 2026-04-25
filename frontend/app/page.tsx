@@ -76,12 +76,12 @@ export default function Home() {
     <div className={styles.dashboard}>
       <aside className={styles.sidebar}>
         <div className={styles.logoBox}>E.</div>
-        <div style={{ marginTop: 'auto', marginBottom: '2rem', fontWeight: 900, fontSize: '0.8rem' }}>V2.1</div>
+        <div className={styles.versionTag}>V2.1</div>
       </aside>
 
       <header className={styles.topbar}>
         <div className={styles.pageTitle}>✦ AI Learning Architect / Control Center</div>
-        <div style={{ fontWeight: 800, color: '#64748b' }}>
+        <div className={styles.timeDisplay}>
           {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </header>
@@ -148,7 +148,7 @@ export default function Home() {
         )}
 
         {loading && (
-          <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '2rem', background: '#fff', padding: '2rem', border: '4px solid #000', boxShadow: '10px 10px 0px #fbbf24', marginBottom: '3rem' }}>
+          <div className={styles.loadingContainer}>
             <div className={styles.loader}></div>
             <div>
               <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '1.2rem' }}>Agent Collaboration in Progress</div>
@@ -158,12 +158,12 @@ export default function Home() {
         )}
 
         {/* Bridge Activity Section */}
-        <section className={styles.card} style={{ marginBottom: '3rem', background: '#0f172a', color: '#38bdf8', border: 'none' }}>
+        <section className={styles.logsSection}>
           <div className={styles.stepHeader} style={{ marginBottom: '1.5rem', borderBottom: '1px solid #1e293b', paddingBottom: '1rem' }}>
             <span style={{ fontWeight: 900, letterSpacing: '0.1em', color: '#fff' }}>LIVE BRIDGE ACTIVITY</span>
-            <span style={{ fontSize: '0.7rem', background: '#0ea5e9', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>CONNECTED</span>
+            <span className={styles.connectedBadge}>CONNECTED</span>
           </div>
-          <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', maxHeight: '150px', overflowY: 'auto' }}>
+          <div className={styles.logsContent}>
             {logs.length === 0 && <div style={{ color: '#64748b' }}>Waiting for connection...</div>}
             {logs.map((log, i) => (
               <div key={i} style={{ marginBottom: '0.5rem', display: 'flex', gap: '1rem' }}>
