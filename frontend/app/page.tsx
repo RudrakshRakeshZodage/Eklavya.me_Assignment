@@ -33,7 +33,6 @@ export default function Home() {
   const [data, setData] = useState<PipelineResponse | null>(null);
   const [error, setError] = useState('');
 
-  // Hydration fix
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -44,16 +43,19 @@ export default function Home() {
     setData(null);
 
     try {
-      // Use the Vercel Proxy Rewrite path
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ grade, topic })
       });
 
-      if (!response.ok) throw new Error('System error during generation');
-
       const result = await response.json();
+      console.log("PIPELINE RESULT:", result);
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'System error during generation');
+      }
+
       setData(result);
     } catch (err: any) {
       setError(err.message);
@@ -62,32 +64,30 @@ export default function Home() {
     }
   };
 
+  if (!isMounted) return null;
+
   return (
     <div className={styles.dashboard}>
-      {/* Sidebar */}
       <aside className={styles.sidebar}>
-        <div className={styles.logoBox} title="Eklavya.me">E.</div>
-        <div style={{ marginTop: 'auto', marginBottom: '2rem', fontWeight: 900, fontSize: '0.8rem' }}>V2.0</div>
+        <div className={styles.logoBox}>E.</div>
+        <div style={{ marginTop: 'auto', marginBottom: '2rem', fontWeight: 900, fontSize: '0.8rem' }}>V2.1</div>
       </aside>
 
-      {/* Topbar */}
       <header className={styles.topbar}>
         <div className={styles.pageTitle}>✦ AI Learning Architect / Control Center</div>
         <div style={{ fontWeight: 800, color: '#64748b' }}>
-          {isMounted ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+          {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </header>
 
-      {/* Main Content */}
       <main className={styles.mainContent}>
         <div className={styles.header}>
           <h1 className={styles.title}>Welcome back, <span style={{ color: '#6366f1' }}>Designer</span></h1>
           <p style={{ color: '#64748b', fontWeight: 700, marginTop: '0.5rem' }}>
-            Ready to architect some education? {isMounted ? new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : '...'}
+            {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
           </p>
         </div>
 
-        {/* Stats Grid - Visual Interest */}
         <div className={styles.statsGrid}>
           <div className={styles.statCard} style={{ borderTop: '6px solid #fbbf24' }}>
             <div className={styles.statLabel}>Active Agents</div>
@@ -103,7 +103,7 @@ export default function Home() {
           </div>
           <div className={styles.statCard} style={{ borderTop: '6px solid #000' }}>
             <div className={styles.statLabel}>Engine</div>
-            <div className={styles.statValue}>Gemini</div>
+            <div className={styles.statValue}>Multi-AI</div>
           </div>
         </div>
 
@@ -120,7 +120,7 @@ export default function Home() {
             <label>Topic to Master</label>
             <input 
               type="text" 
-              placeholder="e.g. History of the Internet, Quantum Mechanics..." 
+              placeholder="e.g. 4G Technology, Solar System..." 
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
             />
@@ -141,26 +141,25 @@ export default function Home() {
             <div className={styles.loader}></div>
             <div>
               <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '1.2rem' }}>Agent Collaboration in Progress</div>
-              <div style={{ color: '#64748b', fontWeight: 600 }}>Analyzing curriculum standards and generating assessments...</div>
+              <div style={{ color: '#64748b', fontWeight: 600 }}>Switching providers and verifying curriculum...</div>
             </div>
           </div>
         )}
 
         {data && (
           <div className={`${styles.contentGrid} animate-fade-in`}>
-            {/* Left: Agent Logs */}
             <aside className={styles.card}>
               <h2 className={styles.sectionTitle}>Agent Pulse</h2>
               <div className={styles.workflowList}>
-                {data.workflow.map((step, i) => (
+                {data.workflow?.map((step, i) => (
                   <div key={i} className={styles.workflowStep}>
                     <div className={styles.stepHeader}>
                       <span>{step.agent}</span>
                       <span className={styles[step.status]}>{step.status}</span>
                     </div>
-                    {step.feedback && step.feedback.length > 0 && (
+                    {step.feedback && (
                       <ul style={{ fontSize: '0.85rem', marginTop: '0.8rem', color: '#64748b', paddingLeft: '1rem' }}>
-                        {step.feedback.map((f, j) => <li key={j} style={{ marginBottom: '0.3rem' }}>{f}</li>)}
+                        {step.feedback.map((f, j) => <li key={j}>{f}</li>)}
                       </ul>
                     )}
                   </div>
@@ -168,34 +167,25 @@ export default function Home() {
               </div>
             </aside>
 
-            {/* Right: Output */}
             <main className={styles.card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <h2 className={styles.sectionTitle} style={{ background: '#6366f1' }}>Master Brief</h2>
-                <div style={{ background: '#000', color: '#fff', padding: '0.4rem 1rem', fontWeight: 900, fontSize: '0.8rem' }}>GRADE {grade} / {topic.toUpperCase()}</div>
-              </div>
-              
+              <h2 className={styles.sectionTitle} style={{ background: '#6366f1' }}>Master Brief</h2>
               <div style={{ marginBottom: '3rem', background: '#f8fafc', padding: '2rem', border: '2px solid #000' }}>
-                <h3 style={{ fontWeight: 900, textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ color: '#6366f1' }}>●</span> Explanation
-                </h3>
-                <p style={{ lineHeight: 1.8, fontSize: '1.15rem', color: '#1e293b' }}>{data.final_content.explanation}</p>
+                <p style={{ lineHeight: 1.8, fontSize: '1.15rem', color: '#1e293b' }}>
+                  {data.final_content?.explanation || 'No content generated.'}
+                </p>
               </div>
 
               <h2 className={styles.sectionTitle} style={{ background: '#10b981' }}>Assessment Suite</h2>
               <div className={styles.mcqGrid}>
-                {data.final_content.mcqs.map((mcq, i) => (
+                {data.final_content?.mcqs?.map((mcq, i) => (
                   <div key={i} className={styles.mcqCard}>
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                      <div style={{ background: '#000', color: '#fff', width: '30px', height: '30px', display: 'flex', alignItems: 'center', fontWeight: 900, flexShrink: 0, justifyContent: 'center' }}>{i+1}</div>
-                      <p style={{ fontWeight: 800, fontSize: '1.1rem' }}>{mcq.question}</p>
-                    </div>
+                    <p style={{ fontWeight: 800, marginBottom: '1rem' }}>{mcq.question}</p>
                     <div className={styles.options}>
                       {mcq.options.map((opt, j) => (
                         <div key={j} className={styles.option}>{opt}</div>
                       ))}
                     </div>
-                    <div className={styles.answer}>✓ VERIFIED: {mcq.answer}</div>
+                    <div className={styles.answer}>✓ {mcq.answer}</div>
                   </div>
                 ))}
               </div>

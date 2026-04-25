@@ -19,13 +19,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load API Keys
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+# Use OpenRouter Key only
+OR_KEY = os.getenv("OPENROUTER_API_KEY")
 
-# Initialize Agents with BOTH keys for fallback
-generator = GeneratorAgent(api_key=GEMINI_API_KEY, or_key=OPENROUTER_API_KEY)
-reviewer = ReviewerAgent(api_key=GEMINI_API_KEY, or_key=OPENROUTER_API_KEY)
+# Initialize Agents
+generator = GeneratorAgent(api_key=OR_KEY)
+reviewer = ReviewerAgent(api_key=OR_KEY)
 
 class GenerationRequest(BaseModel):
     grade: int
@@ -34,7 +33,7 @@ class GenerationRequest(BaseModel):
 @app.post("/generate")
 async def generate_content(request: GenerationRequest):
     try:
-        print(f"Generation Request: Grade {request.grade}, Topic: {request.topic}")
+        print(f"Pipeline: Grade {request.grade} - {request.topic}")
         
         # Phase 1: Generation
         content = generator.generate(request.grade, request.topic)
@@ -43,23 +42,28 @@ async def generate_content(request: GenerationRequest):
         review_result = reviewer.review(content, request.grade)
         
         # Phase 3: Final Output
-        return {
-            "status": review_result.get("status", "APPROVED"),
-            "feedback": review_result.get("feedback", "Looks good!"),
-            "data": review_result.get("reviewed_content", content)
+        response_data = {
+            "workflow": [
+                {
+                    "agent": "Architect",
+                    "status": "success"
+                },
+                {
+                    "agent": "Reviewer",
+                    "status": "pass" if review_result.get("status") == "APPROVED" else "fail",
+                    "feedback": [review_result.get("feedback", "Looks good!")]
+                }
+            ],
+            "final_content": review_result.get("reviewed_content", content)
         }
         
+        return response_data
+        
     except Exception as e:
-        print(f"BACKEND ERROR: {str(e)}")
-        # If both fail, return the error
+        print(f"ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
 
 if __name__ == "__main__":
     import uvicorn
-    # Use PORT from environment (Render requirement)
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 8001))
     uvicorn.run(app, host="0.0.0.0", port=port)
