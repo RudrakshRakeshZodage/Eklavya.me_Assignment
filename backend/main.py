@@ -24,9 +24,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # Initialize Agents
-# We pass both keys, the agents will decide which one to use
-generator = GeneratorAgent(api_key=GEMINI_API_KEY, or_key=OPENROUTER_API_KEY)
-reviewer = ReviewerAgent(api_key=GEMINI_API_KEY, or_key=OPENROUTER_API_KEY)
+# We prioritize Gemini (api_key). If Gemini is missing, we use OpenRouter.
+generator = GeneratorAgent(api_key=GEMINI_API_KEY, or_key=OPENROUTER_API_KEY if not GEMINI_API_KEY else None)
+reviewer = ReviewerAgent(api_key=GEMINI_API_KEY, or_key=OPENROUTER_API_KEY if not GEMINI_API_KEY else None)
 
 class GenerationRequest(BaseModel):
     grade: int
